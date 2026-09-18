@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex+ IPTV & VOD Dashboard</title>
+    <!-- Tailwind CSS لتصميم عصري وسريع -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome للأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .card-hover:hover { transform: translateY(-4px); transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- الشريط العلوي -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-md">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <div class="bg-red-600 text-white font-black px-3 py-1 rounded-lg text-xl tracking-wider">APEX+</div>
+            <span class="text-slate-400 text-sm hidden sm:inline">منصة البث الذكية</span>
+        </div>
+        <div class="flex items-center space-x-4 space-x-reverse">
+            <button onclick="switchTab('live')" id="btn-live" class="px-4 py-2 rounded-lg font-medium bg-red-600 text-white transition">البث الحي</button>
+            <button onclick="switchTab('vod')" id="btn-vod" class="px-4 py-2 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">الأفلام والمسلسلات</button>
+        </div>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6">
+        
+        <!-- قسم البث الحي -->
+        <section id="section-live" class="space-y-6">
+            <h2 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-satellite-dish text-red-500"></i> قنوات البث الحي والمباريات</h2>
+            <div id="live-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- يتم تعبئته تلقائياً عبر JavaScript -->
+            </div>
+        </section>
+
+        <!-- قسم الأفلام (VOD) -->
+        <section id="section-vod" class="space-y-6 hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-film text-red-500"></i> مكتبة الأفلام والمسلسلات</h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="changePage(currentPage - 1)" id="prev-btn" class="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 disabled:opacity-50">السابق</button>
+                    <span id="page-info" class="text-sm text-slate-400">الصفحة 1</span>
+                    <button onclick="changePage(currentPage + 1)" id="next-btn" class="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700">التالي</button>
+                </div>
+            </div>
+            <div id="vod-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <!-- يتم تعبئته تلقائياً عبر JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- نافذة تشغيل المشغل (Modal) -->
+    <div id="player-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden border border-slate-800 relative shadow-2xl">
+            <div class="flex justify-between items-center p-4 border-b border-slate-800">
+                <h3 id="modal-title" class="font-bold text-lg">مشغل العرض</h3>
+                <button onclick="closePlayer()" class="text-slate-400 hover:text-white text-xl px-2">&times;</button>
+            </div>
+            <div class="p-4 bg-black aspect-video flex items-center justify-center">
+                <video id="video-player" controls class="w-full h-full max-h-[70vh]" src=""></video>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-900 border-t border-slate-800 text-center py-4 text-sm text-slate-500 mt-auto">
+        Apex+ IPTV Proxy Dashboard &copy; 2026
+    </footer>
+
+    <!-- سكربت الجافاسكريبت لربط البيانات بالسيرفر -->
+    <script>
+        // ضع رابط سيرفرك هنا
+        const API_BASE = 'https://apex-server-vy59.onrender.com';
+        let currentPage = 1;
+
+        function switchTab(tab) {
+            const liveSec = document.getElementById('section-live');
+            const vodSec = document.getElementById('section-vod');
+            const btnLive = document.getElementById('btn-live');
+            const btnVod = document.getElementById('btn-vod');
+
+            if (tab === 'live') {
+                liveSec.classList.remove('hidden');
+                vodSec.classList.add('hidden');
+                btnLive.className = "px-4 py-2 rounded-lg font-medium bg-red-600 text-white transition";
+                btnVod.className = "px-4 py-2 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                fetchLiveChannels();
+            } else {
+                liveSec.classList.add('hidden');
+                vodSec.classList.remove('hidden');
+                btnVod.className = "px-4 py-2 rounded-lg font-medium bg-red-600 text-white transition";
+                btnLive.className = "px-4 py-2 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+                fetchVodMovies(currentPage);
+            }
+        }
+
+        async function fetchLiveChannels() {
+            try {
+                const res = await fetch(`${API_BASE}/api/live`);
+                const data = await res.json();
+                const container = document.getElementById('live-container');
+                container.innerHTML = '';
+
+                if (data.status === 'success' && data.channels) {
+                    data.channels.forEach(channel => {
+                        container.innerHTML += `
+                            <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-5 flex flex-col justify-between card-hover">
+                                <div>
+                                    <span class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-md font-semibold">${channel.group}</span>
+                                    <h3 class="text-lg font-bold mt-3">${channel.name}</h3>
+                                </div>
+                                <button onclick="openPlayer('${channel.url}', '${channel.name}')" class="mt-5 w-full bg-red-600 hover:bg-red-700 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition">
+                                    <i class="fa-solid fa-play"></i> تشغيل البث
+                                </button>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error("خطأ في جلب القنوات:", err);
+            }
+        }
+
+        async function fetchVodMovies(page) {
+            try {
+                const res = await fetch(`${API_BASE}/api/vod?page=${page}`);
+                const data = await res.json();
+                const container = document.getElementById('vod-container');
+                container.innerHTML = '';
+
+                if (data.status === 'success' && data.movies) {
+                    document.getElementById('page-info').innerText = `الصفحة ${data.current_page} من ${data.total_pages}`;
+                    document.getElementById('prev-btn').disabled = data.current_page <= 1;
+                    document.getElementById('next-btn').disabled = data.current_page >= data.total_pages;
+
+                    data.movies.forEach(movie => {
+                        container.innerHTML += `
+                            <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl overflow-hidden flex flex-col card-hover">
+                                <div class="bg-slate-700 aspect-[2/3] relative flex items-center justify-center">
+                                    <i class="fa-solid fa-film text-4xl text-slate-500"></i>
+                                    <span class="absolute top-2 right-2 bg-black/70 text-xs px-2 py-1 rounded">${movie.year}</span>
+                                </div>
+                                <div class="p-3 flex flex-col flex-1 justify-between">
+                                    <div>
+                                        <span class="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">${movie.category}</span>
+                                        <h4 class="font-bold text-sm mt-1 truncate">${movie.title}</h4>
+                                    </div>
+                                    <button onclick="openPlayer('${movie.stream_url}', '${movie.title}')" class="mt-3 w-full bg-slate-700 hover:bg-red-600 py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1 transition">
+                                        <i class="fa-solid fa-play"></i> مشاهدة
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error("خطأ في جلب الأفلام:", err);
+            }
+        }
+
+        function changePage(page) {
+            if (page < 1) return;
+            currentPage = page;
+            fetchVodMovies(currentPage);
+        }
+
+        function openPlayer(url, title) {
+            const modal = document.getElementById('player-modal');
+            const video = document.getElementById('video-player');
+            document.getElementById('modal-title').innerText = title;
+            modal.classList.remove('hidden');
+            video.src = url;
+            video.play();
+        }
+
+        function closePlayer() {
+            const modal = document.getElementById('player-modal');
+            const video = document.getElementById('video-player');
+            modal.classList.add('hidden');
+            video.pause();
+            video.src = '';
+        }
+
+        // تحميل البث الحي عند بدء التشغيل تلقائياً
+        fetchLiveChannels();
+    </script>
+</body>
+</html>
