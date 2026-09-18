@@ -25,12 +25,13 @@ app.get('/api/live', async (req, res) => {
   }
 });
 
-// روابط فيديو جديدة وسريعة التحميل ومضمونة التشغيل
+// روابط فيديو تجريبية شغّالة حالياً (دلو جوجل القديم commondatastorage.googleapis.com/gtv-videos-bucket
+// توقف عن العمل لأغلب ملفاته - تأكد ذلك بالفحص المباشر، لذا استُبدل بمصادر بديلة موثوقة)
 const sampleVideos = [
   'https://www.w3schools.com/html/mov_bbb.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
+  'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
+  'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',
+  'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_1MB.mp4'
 ];
 
 // قاعدة بيانات الأفلام
