@@ -3,81 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة Apex+ الرقمية</title>
-    <!-- Tailwind CSS CDN -->
+    <title>منصة APEX+ الرقمية</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #0b0f19; color: #f3f4f6; }
-        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .card-hover:hover { transform: translateY(-6px); box-shadow: 0 12px 25px -10px rgba(220, 38, 38, 0.4); }
+        body { font-family: 'Tajawal', sans-serif; background-color: #141414; color: #ffffff; }
+        .netflix-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .netflix-card:hover { transform: scale(1.05); z-index: 20; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-red-600 selection:text-white">
 
     <!-- شريط التنقل العلوي -->
-    <header class="bg-slate-950/90 border-b border-slate-800/80 sticky top-0 z-50 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+    <header class="bg-gradient-to-b from-black/90 to-transparent fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-8">
-                <div class="flex items-center gap-2">
-                    <span class="bg-red-600 text-white font-black text-xl px-2.5 py-1 rounded-lg tracking-wider shadow-lg shadow-red-600/30">APEX+</span>
-                </div>
-                <nav class="hidden md:flex items-center gap-3">
-                    <button onclick="switchTab('movies')" id="nav-movies" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-red-600 text-white shadow-md shadow-red-600/20 transition cursor-pointer">الأفلام السينمائية</button>
-                    <button onclick="switchTab('series')" id="nav-series" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition cursor-pointer">المسلسلات التلفزيونية</button>
-                    <button onclick="switchTab('live')" id="nav-live" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition cursor-pointer">البث الحي والمباريات</button>
+                <h1 class="text-3xl font-black text-red-600 tracking-wider">APEX+</h1>
+                <nav class="hidden md:flex items-center gap-6">
+                    <button onclick="switchTab('movies')" id="nav-movies" class="text-sm font-bold text-white transition hover:text-red-500 cursor-pointer">الأفلام</button>
+                    <button onclick="switchTab('series')" id="nav-series" class="text-sm font-bold text-slate-300 transition hover:text-red-500 cursor-pointer">المسلسلات</button>
+                    <button onclick="switchTab('live')" id="nav-live" class="text-sm font-bold text-slate-300 transition hover:text-red-500 cursor-pointer">البث المباشر</button>
                 </nav>
             </div>
             <div class="flex items-center gap-3">
-                <div class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-circle text-[7px] animate-pulse"></i> النظام متصل
-                </div>
+                <span class="text-xs bg-red-600/20 text-red-500 border border-red-600/30 px-3 py-1 rounded-full font-bold">مكتبة رقمية ضخمة</span>
             </div>
         </div>
     </header>
 
+    <!-- بانر ترحيبي عائم -->
+    <div class="relative h-[40vh] w-full bg-slate-900 overflow-hidden flex items-end pb-10 px-8 md:px-16 mt-20">
+        <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('https://image.tmdb.org/t/p/original/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg');"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 to-transparent"></div>
+        <div class="relative z-10 max-w-2xl space-y-2">
+            <span class="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded uppercase">أفلام ومسلسلات عالمية</span>
+            <h2 class="text-3xl md:text-5xl font-black text-white">استمتع بأعظم الأعمال السينمائية</h2>
+            <p class="text-xs md:text-sm text-slate-300">مكتبة شاملة تضم أشهر الأفلام والمسلسلات بجودة عالية وسرعة فائقة.</p>
+        </div>
+    </div>
+
     <!-- المحتوى الرئيسي -->
-    <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 space-y-8">
+    <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 space-y-10 -mt-8 relative z-20">
         
         <!-- قسم الأفلام -->
-        <section id="section-movies" class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800/80 pb-4 gap-2">
-                <div>
-                    <h2 class="text-2xl font-black flex items-center gap-3 text-white">
-                        <i class="fa-solid fa-film text-red-600"></i> مكتبة الأفلام
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-1">تصفح أحدث وأقوى الأفلام بجودة عالية</p>
-                </div>
-                <span id="movies-count" class="text-xs bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-bold">جاري التحميل...</span>
+        <section id="section-movies" class="space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-black text-white border-r-4 border-red-600 pr-3">مكتبة الأفلام السينمائية</h3>
+                <span id="movies-count" class="text-xs text-slate-400 font-bold"></span>
             </div>
-            <div id="movies-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5"></div>
+            <div id="movies-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"></div>
             <div id="movies-pagination" class="flex justify-center items-center gap-3 pt-6"></div>
         </section>
 
         <!-- قسم المسلسلات -->
-        <section id="section-series" class="space-y-6 hidden">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800/80 pb-4 gap-2">
-                <div>
-                    <h2 class="text-2xl font-black flex items-center gap-3 text-white">
-                        <i class="fa-solid fa-tv text-blue-600"></i> مكتبة المسلسلات
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-1">استمتع بمتابعة أقوى المسلسلات الحصرية</p>
-                </div>
-                <span id="series-count" class="text-xs bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-bold">جاري التحميل...</span>
+        <section id="section-series" class="space-y-4 hidden">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-black text-white border-r-4 border-red-600 pr-3">مكتبة المسلسلات التلفزيونية</h3>
+                <span id="series-count" class="text-xs text-slate-400 font-bold"></span>
             </div>
-            <div id="series-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5"></div>
+            <div id="series-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"></div>
             <div id="series-pagination" class="flex justify-center items-center gap-3 pt-6"></div>
         </section>
 
-        <!-- قسم البث الحي -->
-        <section id="section-live" class="space-y-6 hidden">
-            <div class="border-b border-slate-800/80 pb-4">
-                <h2 class="text-2xl font-black flex items-center gap-3 text-white">
-                    <i class="fa-solid fa-satellite-dish text-emerald-500"></i> قنوات البث الحي
-                </h2>
-                <p class="text-xs text-slate-400 mt-1">بث مباشر للقنوات الإخبارية والرياضية المباشرة</p>
+        <!-- قسم البث المباشر -->
+        <section id="section-live" class="space-y-4 hidden">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-black text-white border-r-4 border-red-600 pr-3">قنوات البث المباشر</h3>
             </div>
             <div id="live-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
         </section>
@@ -86,10 +80,10 @@
 
     <!-- مشغل الفيديو المنبثق -->
     <div id="video-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-950">
-                <h3 id="modal-title" class="font-bold text-base text-white truncate">مشغل الوسائط</h3>
-                <button onclick="closePlayer()" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer">
+        <div class="bg-[#181818] border border-slate-800 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-slate-800 bg-black">
+                <h3 id="modal-title" class="font-bold text-sm text-white truncate">مشغل الوسائط</h3>
+                <button onclick="closePlayer()" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -99,18 +93,16 @@
         </div>
     </div>
 
-    <!-- الجافاسكريبت والمنطق البرمجي -->
+    <!-- كود الجافاسكريبت للتحكم والواجهة -->
     <script>
         function switchTab(tab) {
             ['movies', 'series', 'live'].forEach(t => {
                 document.getElementById(`section-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`).className = 'px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-900 transition cursor-pointer';
+                document.getElementById(`nav-${t}`).className = 'text-sm font-bold text-slate-300 transition hover:text-red-500 cursor-pointer';
             });
 
             document.getElementById(`section-${tab}`).classList.remove('hidden');
-            const activeNav = document.getElementById(`nav-${tab}`);
-            activeNav.className = 'px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-md transition cursor-pointer ' + 
-                (tab === 'movies' ? 'bg-red-600 shadow-red-600/20' : tab === 'series' ? 'bg-blue-600 shadow-blue-600/20' : 'bg-emerald-600 shadow-emerald-600/20');
+            document.getElementById(`nav-${tab}`).className = 'text-sm font-bold text-white transition hover:text-red-500 cursor-pointer border-b-2 border-red-600 pb-1';
 
             if (tab === 'movies') loadMovies(1);
             if (tab === 'series') loadSeries(1);
@@ -121,23 +113,24 @@
             try {
                 const res = await fetch(`/api/movies?page=${page}`);
                 const data = await res.json();
-                document.getElementById('movies-count').innerText = `إجمالي الأفلام: ${data.total_items.toLocaleString()} فيلم`;
+                document.getElementById('movies-count').innerText = `إجمالي الأفلام: ${data.total_items.toLocaleString()}`;
                 
                 let html = '';
                 data.movies.forEach(m => {
                     html += `
-                        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl overflow-hidden flex flex-col card-hover shadow-lg">
-                            <div class="bg-slate-950 aspect-[2/3] relative overflow-hidden group">
-                                <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
-                                <span class="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-[11px] text-white px-2.5 py-1 rounded-lg font-bold border border-white/10">${m.year}</span>
+                        <div class="bg-[#1f1f1f] rounded-xl overflow-hidden flex flex-col netflix-card shadow-lg border border-slate-800/60">
+                            <div class="relative aspect-[2/3] w-full bg-black overflow-hidden">
+                                <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover" loading="lazy">
+                                <span class="absolute top-2 left-2 bg-black/70 backdrop-blur text-[10px] text-white px-2 py-0.5 rounded font-bold">${m.year}</span>
+                                <span class="absolute bottom-2 right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${m.rating}</span>
                             </div>
-                            <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                            <div class="p-3 flex flex-col justify-between flex-1 gap-3 bg-[#181818]">
                                 <div>
-                                    <span class="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-md font-bold">${m.category}</span>
-                                    <h4 class="font-bold text-sm mt-2 text-white line-clamp-1" title="${m.title}">${m.title}</h4>
+                                    <span class="text-[9px] text-red-500 font-bold">${m.category}</span>
+                                    <h4 class="font-bold text-xs mt-1 text-white line-clamp-1" title="${m.title}">${m.title}</h4>
                                 </div>
-                                <button onclick="openPlayer('${m.stream_url}', '${m.title.replace(/'/g, "\\'")}')" class="w-full bg-red-600 hover:bg-red-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-red-600/20">
-                                    <i class="fa-solid fa-play text-[10px]"></i> مشاهدة الآن
+                                <button onclick="openPlayer('${m.stream_url}', '${m.title.replace(/'/g, "\\'")}')" class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow">
+                                    <i class="fa-solid fa-play text-[9px]"></i> تشغيل الفيلم
                                 </button>
                             </div>
                         </div>
@@ -154,23 +147,24 @@
             try {
                 const res = await fetch(`/api/series?page=${page}`);
                 const data = await res.json();
-                document.getElementById('series-count').innerText = `إجمالي المسلسلات: ${data.total_items.toLocaleString()} مسلسل`;
+                document.getElementById('series-count').innerText = `إجمالي المسلسلات: ${data.total_items.toLocaleString()}`;
                 
                 let html = '';
                 data.series.forEach(s => {
                     html += `
-                        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl overflow-hidden flex flex-col card-hover shadow-lg">
-                            <div class="bg-slate-950 aspect-[2/3] relative overflow-hidden group">
-                                <img src="${s.poster}" alt="${s.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
-                                <span class="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-[11px] text-white px-2.5 py-1 rounded-lg font-bold border border-white/10">${s.year}</span>
+                        <div class="bg-[#1f1f1f] rounded-xl overflow-hidden flex flex-col netflix-card shadow-lg border border-slate-800/60">
+                            <div class="relative aspect-[2/3] w-full bg-black overflow-hidden">
+                                <img src="${s.poster}" alt="${s.title}" class="w-full h-full object-cover" loading="lazy">
+                                <span class="absolute top-2 left-2 bg-black/70 backdrop-blur text-[10px] text-white px-2 py-0.5 rounded font-bold">${s.year}</span>
+                                <span class="absolute bottom-2 right-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${s.rating}</span>
                             </div>
-                            <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                            <div class="p-3 flex flex-col justify-between flex-1 gap-3 bg-[#181818]">
                                 <div>
-                                    <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-md font-bold">${s.category}</span>
-                                    <h4 class="font-bold text-sm mt-2 text-white line-clamp-1" title="${s.title}">${s.title}</h4>
+                                    <span class="text-[9px] text-blue-400 font-bold">${s.category}</span>
+                                    <h4 class="font-bold text-xs mt-1 text-white line-clamp-1" title="${s.title}">${s.title}</h4>
                                 </div>
-                                <button onclick="openPlayer('${s.stream_url}', '${s.title.replace(/'/g, "\\'")}')" class="w-full bg-blue-600 hover:bg-blue-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-blue-600/20">
-                                    <i class="fa-solid fa-play text-[10px]"></i> مشاهدة الآن
+                                <button onclick="openPlayer('${s.stream_url}', '${s.title.replace(/'/g, "\\'")}')" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow">
+                                    <i class="fa-solid fa-play text-[9px]"></i> تشغيل الحلقة
                                 </button>
                             </div>
                         </div>
@@ -190,18 +184,13 @@
                 let html = '';
                 data.channels.forEach(ch => {
                     html += `
-                        <div class="bg-slate-900/90 border border-slate-800/80 p-5 rounded-2xl flex flex-col justify-between shadow-xl gap-4">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md font-bold">${ch.group}</span>
-                                    <h3 class="font-extrabold text-base mt-3 text-white">${ch.name}</h3>
-                                </div>
-                                <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-emerald-400">
-                                    <i class="fa-solid fa-tv"></i>
-                                </div>
+                        <div class="bg-[#1f1f1f] border border-slate-800 p-5 rounded-xl flex flex-col justify-between shadow-xl gap-4">
+                            <div>
+                                <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">${ch.group}</span>
+                                <h4 class="font-bold text-base mt-2 text-white">${ch.name}</h4>
                             </div>
-                            <button onclick="openPlayer('${ch.url}', '${ch.name.replace(/'/g, "\\'")}')" class="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-emerald-600/20 text-white">
-                                <i class="fa-solid fa-tower-broadcast"></i> تشغيل البث المباشر
+                            <button onclick="openPlayer('${ch.url}', '${ch.name.replace(/'/g, "\\'")}')" class="w-full bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow text-white">
+                                <i class="fa-solid fa-tower-broadcast"></i> بث مباشر
                             </button>
                         </div>
                     `;
@@ -215,9 +204,9 @@
         function renderPagination(containerId, currentPage, totalPages, callback) {
             const container = document.getElementById(containerId);
             container.innerHTML = `
-                <button onclick="${callback.name}(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold transition cursor-pointer text-slate-300">السابق</button>
-                <span class="text-xs text-slate-400 font-bold px-2">صفحة ${currentPage} من ${totalPages}</span>
-                <button onclick="${callback.name}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold transition cursor-pointer text-slate-300">التالي</button>
+                <button onclick="${callback.name}(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition cursor-pointer">السابق</button>
+                <span class="text-xs text-slate-400 font-bold">صفحة ${currentPage} من ${totalPages}</span>
+                <button onclick="${callback.name}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition cursor-pointer">التالي</button>
             `;
         }
 
@@ -236,8 +225,8 @@
             document.getElementById('video-modal').classList.add('hidden');
         }
 
-        // تشغيل الأفلام افتراضياً عند فتح الموقع
-        loadMovies(1);
+        // تشغيل الأفلام افتراضياً عند التحميل
+        switchTab('movies');
     </script>
 </body>
 </html>
