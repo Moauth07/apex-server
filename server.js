@@ -1,19 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-// الصفحة الرئيسية لتأكيد عمل السيرفر
+// عرض واجهة المستخدم (index.html) مباشرة عند الدخول للرابط الرئيسي
 app.get('/', (req, res) => {
-  res.json({
-    status: 'online',
-    server: 'Apex+ Live IPTV & VOD Proxy',
-    message: 'Connected to public streaming sources successfully!'
-  });
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // مسار قنوات البث الحي والمباريات
