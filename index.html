@@ -89,7 +89,7 @@
                 </button>
             </div>
             <div class="aspect-video bg-black relative flex items-center justify-center">
-                <video id="active-video-player" controls autoplay class="w-full h-full object-contain"></video>
+                <video id="active-video-player" controls class="w-full h-full object-contain"></video>
             </div>
         </div>
     </div>
@@ -229,8 +229,9 @@
             document.getElementById('modal-title').innerText = title;
             const player = document.getElementById('active-video-player');
             player.src = url;
+            player.load(); // فرض تحميل الفيديو لتجنب الشاشة الرمادية
             document.getElementById('video-modal').classList.remove('hidden');
-            player.play().catch(e => console.log("Autoplay blocked:", e));
+            player.play().catch(e => console.log("Autoplay waiting for user interaction:", e));
         }
 
         function closePlayer() {

@@ -25,15 +25,15 @@ app.get('/api/live', async (req, res) => {
   }
 });
 
-// روابط فيديو مستقرة 100% للتجربة والتشغيل الفوري
+// روابط فيديو جديدة وسريعة التحميل ومضمونة التشغيل
 const sampleVideos = [
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'
+  'https://www.w3schools.com/html/mov_bbb.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
 ];
 
-// قاعدة بيانات الأفلام الحقيقية
+// قاعدة بيانات الأفلام
 const realMoviesList = [
   { title: 'Inception', category: 'خيال علمي وإثارة', year: 2010, rating: '8.8', poster: 'https://image.tmdb.org/t/p/w500/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg' },
   { title: 'Interstellar', category: 'مغامرة ومخاطرة', year: 2014, rating: '8.7', poster: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg' },
@@ -43,38 +43,21 @@ const realMoviesList = [
   { title: 'Avatar: The Way of Water', category: 'خيال علمي', year: 2022, rating: '7.6', poster: 'https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg' }
 ];
 
-// قاعدة بيانات المسلسلات (تحتوي على مواسم متعددة وحلقات حقيقية)
+// قاعدة بيانات المسلسلات والمواسم
 const realSeriesList = [
   { 
     id: 1, title: 'Breaking Bad', category: 'دراما وجريمة', year: 2008, rating: '9.5', 
     poster: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
     seasons: [
       { season: 1, episodes: [{ ep: 1, title: 'الحلقة 1: البداية', url: sampleVideos[0] }, { ep: 2, title: 'الحلقة 2: القطة', url: sampleVideos[1] }, { ep: 3, title: 'الحلقة 3: أزمة', url: sampleVideos[2] }] },
-      { season: 2, episodes: [{ ep: 1, title: 'الحلقة 1: العودة', url: sampleVideos[3] }, { ep: 2, title: 'الحلقة 2: مواجهة', url: sampleVideos[0] }] },
-      { season: 3, episodes: [{ ep: 1, title: 'الحلقة 1: خطر داهم', url: sampleVideos[1] }] }
+      { season: 2, episodes: [{ ep: 1, title: 'الحلقة 1: العودة', url: sampleVideos[3] }, { ep: 2, title: 'الحلقة 2: مواجهة', url: sampleVideos[0] }] }
     ]
   },
   { 
     id: 2, title: 'Stranger Things', category: 'خيال علمي وغموض', year: 2016, rating: '8.7', 
     poster: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
     seasons: [
-      { season: 1, episodes: [{ ep: 1, title: 'الحلقة 1: الاختفاء', url: sampleVideos[2] }, { ep: 2, title: 'الحلقة 2: الفتاة', url: sampleVideos[3] }] },
-      { season: 2, episodes: [{ ep: 1, title: 'الحلقة 1: العودة للعالم المقلوب', url: sampleVideos[0] }] }
-    ]
-  },
-  { 
-    id: 3, title: 'Game of Thrones', category: 'فانتازيا ومغامرة', year: 2011, rating: '9.2', 
-    poster: 'https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg',
-    seasons: [
-      { season: 1, episodes: [{ ep: 1, title: 'الحلقة 1: الشتاء قادم', url: sampleVideos[1] }, { ep: 2, title: 'الحلقة 2: الملوك', url: sampleVideos[2] }] },
-      { season: 2, episodes: [{ ep: 1, title: 'الحلقة 1: حرب الأقطاب', url: sampleVideos[3] }] }
-    ]
-  },
-  { 
-    id: 4, title: 'Money Heist', category: 'إثارة وجريمة', year: 2017, rating: '8.2', 
-    poster: 'https://image.tmdb.org/t/p/w500/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg',
-    seasons: [
-      { season: 1, episodes: [{ ep: 1, title: 'الحلقة 1: التخطيط', url: sampleVideos[0] }, { ep: 2, title: 'الحلقة 2: الرهائن', url: sampleVideos[1] }] }
+      { season: 1, episodes: [{ ep: 1, title: 'الحلقة 1: الاختفاء', url: sampleVideos[1] }, { ep: 2, title: 'الحلقة 2: الفتاة', url: sampleVideos[2] }] }
     ]
   }
 ];
@@ -104,7 +87,7 @@ app.get('/api/movies', (req, res) => {
   res.json({ total_items: totalItems, current_page: page, total_pages: Math.ceil(totalItems / limit), movies });
 });
 
-// مسار المسلسلات مع المواسم والحلقات الكاملة
+// مسار المسلسلات
 app.get('/api/series', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 20;
