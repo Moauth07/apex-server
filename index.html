@@ -6,14 +6,24 @@
     <title>منصة APEX+ الرقمية</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- مكتبة تشغيل بث HLS (m3u8) - ضرورية لتشغيل القنوات المباشرة في أغلب المتصفحات -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
         body { font-family: 'Tajawal', sans-serif; background-color: #141414; color: #ffffff; }
         .netflix-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .netflix-card:hover { transform: scale(1.05); z-index: 20; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
+        .skeleton { background: linear-gradient(90deg, #1f1f1f 25%, #2a2a2a 50%, #1f1f1f 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 3.2s forwards; }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-red-600 selection:text-white">
+
+    <!-- حاوية التنبيهات (رسائل الأخطاء) -->
+    <div id="toast-container" class="fixed top-24 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 items-center"></div>
 
     <!-- شريط التنقل -->
     <header class="bg-gradient-to-b from-black/90 to-transparent fixed top-0 left-0 right-0 z-50">
@@ -32,7 +42,7 @@
 
     <!-- المحتوى الرئيسي -->
     <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 space-y-10 mt-24">
-        
+
         <!-- قسم الأفلام -->
         <section id="section-movies" class="space-y-4">
             <div class="flex justify-between items-center">
@@ -67,13 +77,13 @@
     <div id="series-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
         <div class="bg-[#181818] border border-slate-800 w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center p-4 border-b border-slate-800 bg-black">
-                <h3 id="series-modal-title" class="font-bold text-base text-white">اختر الموسم والحلقة</h3>
+                <h3 id="series-modal-title" class="font-bold text-base text-white"></h3>
                 <button onclick="closeSeriesModal()" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <div class="p-6 overflow-y-auto space-y-6 flex-1">
-                <div id="seasons-tabs" class="flex gap-2 border-b border-slate-800 pb-3"></div>
+                <div id="seasons-tabs" class="flex gap-2 border-b border-slate-800 pb-3 flex-wrap"></div>
                 <div id="episodes-list" class="space-y-3"></div>
             </div>
         </div>
@@ -83,19 +93,79 @@
     <div id="video-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
         <div class="bg-[#181818] border border-slate-800 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col">
             <div class="flex justify-between items-center p-4 border-b border-slate-800 bg-black">
-                <h3 id="modal-title" class="font-bold text-sm text-white truncate">مشغل الوسائط</h3>
+                <h3 id="modal-title" class="font-bold text-sm text-white truncate"></h3>
                 <button onclick="closePlayer()" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <div class="aspect-video bg-black relative flex items-center justify-center">
-                <video id="active-video-player" controls class="w-full h-full object-contain"></video>
+                <div id="player-loading" class="absolute inset-0 flex items-center justify-center hidden">
+                    <i class="fa-solid fa-spinner fa-spin text-red-600 text-3xl"></i>
+                </div>
+                <video id="active-video-player" controls autoplay class="w-full h-full object-contain"></video>
             </div>
         </div>
     </div>
 
     <script>
+        let globalMovies = [];
+        let globalSeries = [];
         let currentSeriesData = null;
+        let hlsInstance = null; // مرجع لمثيل hls.js الحالي لتفادي تسرب الذاكرة
+
+        // ---------- أدوات مساعدة للأمان والتنبيهات ----------
+
+        // يمنع حقن HTML (XSS) عند إدراج نصوص قادمة من الـ API داخل الصفحة
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const colors = { error: 'bg-red-600', info: 'bg-slate-700', success: 'bg-emerald-600' };
+            const el = document.createElement('div');
+            el.className = `toast ${colors[type] || colors.error} text-white text-sm font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2`;
+            el.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span></span>`;
+            el.querySelector('span').textContent = message; // textContent لتفادي أي حقن
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        }
+
+        function renderSkeletonGrid(containerId, count = 10) {
+            const container = document.getElementById(containerId);
+            let html = '';
+            for (let i = 0; i < count; i++) {
+                html += `
+                    <div class="bg-[#1f1f1f] rounded-xl overflow-hidden flex flex-col border border-slate-800/60">
+                        <div class="aspect-[2/3] w-full skeleton"></div>
+                        <div class="p-3 space-y-2">
+                            <div class="h-3 w-3/4 rounded skeleton"></div>
+                            <div class="h-7 w-full rounded-lg skeleton"></div>
+                        </div>
+                    </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderErrorState(containerId, message, retryFn) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-16 gap-4 text-center">
+                    <i class="fa-solid fa-triangle-exclamation text-red-600 text-3xl"></i>
+                    <p class="text-slate-300 font-bold text-sm"></p>
+                    <button id="retry-btn-${containerId}" class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg text-xs font-bold transition cursor-pointer">إعادة المحاولة</button>
+                </div>`;
+            container.querySelector('p').textContent = message;
+            container.querySelector(`#retry-btn-${containerId}`).addEventListener('click', retryFn);
+        }
+
+        // ---------- التنقل بين الأقسام ----------
 
         function switchTab(tab) {
             ['movies', 'series', 'live'].forEach(t => {
@@ -105,72 +175,118 @@
             document.getElementById(`section-${tab}`).classList.remove('hidden');
             document.getElementById(`nav-${tab}`).className = 'text-sm font-bold text-white transition hover:text-red-500 cursor-pointer border-b-2 border-red-600 pb-1';
 
-            if (tab === 'movies') loadMovies(1);
-            if (tab === 'series') loadSeries(1);
+            if (tab === 'movies' && globalMovies.length === 0) loadMovies(1);
+            if (tab === 'series' && globalSeries.length === 0) loadSeries(1);
             if (tab === 'live') loadLive();
         }
 
+        // ---------- الأفلام ----------
+
         async function loadMovies(page) {
-            const res = await fetch(`/api/movies?page=${page}`);
-            const data = await res.json();
-            document.getElementById('movies-count').innerText = `إجمالي الأفلام: ${data.total_items.toLocaleString()}`;
-            
-            let html = '';
-            data.movies.forEach(m => {
-                html += `
-                    <div class="bg-[#1f1f1f] rounded-xl overflow-hidden flex flex-col netflix-card border border-slate-800/60 shadow-lg">
-                        <div class="relative aspect-[2/3] w-full bg-black">
-                            <img src="${m.poster}" class="w-full h-full object-cover" loading="lazy">
-                            <span class="absolute top-2 left-2 bg-black/70 text-[10px] text-white px-2 py-0.5 rounded font-bold">${m.year}</span>
-                            <span class="absolute bottom-2 right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${m.rating}</span>
-                        </div>
-                        <div class="p-3 flex flex-col justify-between flex-1 gap-3 bg-[#181818]">
-                            <h4 class="font-bold text-xs text-white line-clamp-1">${m.title}</h4>
-                            <button onclick="openPlayer('${m.stream_url}', '${m.title.replace(/'/g, "\\'")}')" class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
-                                <i class="fa-solid fa-play text-[9px]"></i> تشغيل الفيلم
-                            </button>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('movies-grid').innerHTML = html;
-            renderPagination('movies-pagination', data.current_page, data.total_pages, loadMovies);
+            renderSkeletonGrid('movies-grid');
+            document.getElementById('movies-pagination').innerHTML = '';
+            try {
+                const res = await fetch(`/api/movies?page=${page}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                globalMovies = data.movies || [];
+                document.getElementById('movies-count').innerText = `إجمالي الأفلام: ${(data.total_items || 0).toLocaleString()}`;
+
+                if (globalMovies.length === 0) {
+                    renderErrorState('movies-grid', 'لا توجد أفلام متاحة حالياً.', () => loadMovies(page));
+                    return;
+                }
+
+                let html = '';
+                globalMovies.forEach((m, index) => {
+                    html += `
+                        <div class="bg-[#1f1f1f] rounded-xl overflow-hidden flex flex-col netflix-card border border-slate-800/60 shadow-lg">
+                            <div class="relative aspect-[2/3] w-full bg-black">
+                                <img src="${escapeHtml(m.poster)}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://placehold.co/300x450/1f1f1f/666?text=No+Image'">
+                                <span class="absolute top-2 left-2 bg-black/70 text-[10px] text-white px-2 py-0.5 rounded font-bold">${escapeHtml(m.year)}</span>
+                                <span class="absolute bottom-2 right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${escapeHtml(m.rating)}</span>
+                            </div>
+                            <div class="p-3 flex flex-col justify-between flex-1 gap-3 bg-[#181818]">
+                                <h4 class="font-bold text-xs text-white line-clamp-1">${escapeHtml(m.title)}</h4>
+                                <button onclick="playMovie(${index})" class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer text-white">
+                                    <i class="fa-solid fa-play text-[9px]"></i> تشغيل الفيلم
+                                </button>
+                            </div>
+                        </div>`;
+                });
+                document.getElementById('movies-grid').innerHTML = html;
+                renderPagination('movies-pagination', data.current_page, data.total_pages, loadMovies);
+            } catch (err) {
+                console.error('Error loading movies:', err);
+                renderErrorState('movies-grid', 'تعذّر تحميل الأفلام. تحقق من الاتصال أو حاول لاحقاً.', () => loadMovies(page));
+                showToast('فشل تحميل قائمة الأفلام');
+            }
         }
+
+        function playMovie(index) {
+            const m = globalMovies[index];
+            if (m && m.stream_url) {
+                openPlayer(m.stream_url, m.title);
+            } else {
+                showToast('رابط التشغيل غير متوفر لهذا الفيلم');
+            }
+        }
+
+        // ---------- المسلسلات ----------
 
         async function loadSeries(page) {
-            const res = await fetch(`/api/series?page=${page}`);
-            const data = await res.json();
-            document.getElementById('series-count').innerText = `إجمالي المسلسلات: ${data.total_items.toLocaleString()}`;
-            
-            let html = '';
-            data.series.forEach(s => {
-                const encodedSeries = encodeURIComponent(JSON.stringify(s));
-                html += `
-                    <div class="bg-[#1f1f1f] rounded-xl overflow-hidden flex flex-col netflix-card border border-slate-800/60 shadow-lg">
-                        <div class="relative aspect-[2/3] w-full bg-black">
-                            <img src="${s.poster}" class="w-full h-full object-cover" loading="lazy">
-                            <span class="absolute top-2 left-2 bg-black/70 text-[10px] text-white px-2 py-0.5 rounded font-bold">${s.year}</span>
-                            <span class="absolute bottom-2 right-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${s.rating}</span>
-                        </div>
-                        <div class="p-3 flex flex-col justify-between flex-1 gap-3 bg-[#181818]">
-                            <h4 class="font-bold text-xs text-white line-clamp-1">${s.title}</h4>
-                            <button onclick='openSeriesModal("${encodedSeries}")' class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
-                                <i class="fa-solid fa-list text-[9px]"></i> اختر الموسم والحلقة
-                            </button>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('series-grid').innerHTML = html;
-            renderPagination('series-pagination', data.current_page, data.total_pages, loadSeries);
+            renderSkeletonGrid('series-grid');
+            document.getElementById('series-pagination').innerHTML = '';
+            try {
+                const res = await fetch(`/api/series?page=${page}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                globalSeries = data.series || [];
+                document.getElementById('series-count').innerText = `إجمالي المسلسلات: ${(data.total_items || 0).toLocaleString()}`;
+
+                if (globalSeries.length === 0) {
+                    renderErrorState('series-grid', 'لا توجد مسلسلات متاحة حالياً.', () => loadSeries(page));
+                    return;
+                }
+
+                let html = '';
+                globalSeries.forEach((s, index) => {
+                    html += `
+                        <div class="bg-[#1f1f1f] rounded-xl overflow-hidden flex flex-col netflix-card border border-slate-800/60 shadow-lg">
+                            <div class="relative aspect-[2/3] w-full bg-black">
+                                <img src="${escapeHtml(s.poster)}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://placehold.co/300x450/1f1f1f/666?text=No+Image'">
+                                <span class="absolute top-2 left-2 bg-black/70 text-[10px] text-white px-2 py-0.5 rounded font-bold">${escapeHtml(s.year)}</span>
+                                <span class="absolute bottom-2 right-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-star text-[9px]"></i> ${escapeHtml(s.rating)}</span>
+                            </div>
+                            <div class="p-3 flex flex-col justify-between flex-1 gap-3 bg-[#181818]">
+                                <h4 class="font-bold text-xs text-white line-clamp-1">${escapeHtml(s.title)}</h4>
+                                <button onclick="openSeriesByIndex(${index})" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer text-white">
+                                    <i class="fa-solid fa-list text-[9px]"></i> اختر الموسم والحلقة
+                                </button>
+                            </div>
+                        </div>`;
+                });
+                document.getElementById('series-grid').innerHTML = html;
+                renderPagination('series-pagination', data.current_page, data.total_pages, loadSeries);
+            } catch (err) {
+                console.error('Error loading series:', err);
+                renderErrorState('series-grid', 'تعذّر تحميل المسلسلات. تحقق من الاتصال أو حاول لاحقاً.', () => loadSeries(page));
+                showToast('فشل تحميل قائمة المسلسلات');
+            }
         }
 
-        function openSeriesModal(encodedData) {
-            const series = JSON.parse(decodeURIComponent(encodedData));
+        function openSeriesByIndex(index) {
+            const series = globalSeries[index];
+            if (!series || !series.seasons || series.seasons.length === 0) {
+                showToast('لا توجد مواسم متاحة لهذا المسلسل');
+                return;
+            }
             currentSeriesData = series;
-            document.getElementById('series-modal-title').innerText = series.title;
-            
+            document.getElementById('series-modal-title').textContent = series.title;
+
             let tabsHtml = '';
             series.seasons.forEach((seasonObj, idx) => {
-                tabsHtml += `<button onclick="selectSeason(${idx})" id="season-tab-${idx}" class="px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${idx === 0 ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">الموسم ${seasonObj.season}</button>`;
+                tabsHtml += `<button onclick="selectSeason(${idx})" id="season-tab-${idx}" class="px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${idx === 0 ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">الموسم ${escapeHtml(seasonObj.season)}</button>`;
             });
             document.getElementById('seasons-tabs').innerHTML = tabsHtml;
             selectSeason(0);
@@ -180,67 +296,167 @@
         function selectSeason(seasonIndex) {
             currentSeriesData.seasons.forEach((_, idx) => {
                 const btn = document.getElementById(`season-tab-${idx}`);
-                if(btn) btn.className = idx === seasonIndex ? 'px-4 py-2 rounded-lg text-xs font-bold bg-red-600 text-white cursor-pointer' : 'px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer';
+                if (btn) btn.className = idx === seasonIndex ? 'px-4 py-2 rounded-lg text-xs font-bold bg-red-600 text-white cursor-pointer' : 'px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer';
             });
 
             const season = currentSeriesData.seasons[seasonIndex];
-            let epsHtml = '';
-            season.episodes.forEach(ep => {
-                epsHtml += `
-                    <div class="bg-black/50 border border-slate-800 p-3 rounded-xl flex items-center justify-between hover:border-red-600/50 transition">
-                        <span class="text-xs font-bold text-white">${ep.title}</span>
-                        <button onclick="openPlayer('${ep.url}', '${currentSeriesData.title} - الموسم ${season.season} - ${ep.title}')" class="bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-white">
-                            <i class="fa-solid fa-play text-[9px]"></i> تشغيل
-                        </button>
-                    </div>`;
+            const list = document.getElementById('episodes-list');
+            list.innerHTML = '';
+            (season.episodes || []).forEach((ep, epIdx) => {
+                const row = document.createElement('div');
+                row.className = 'bg-black/50 border border-slate-800 p-3 rounded-xl flex items-center justify-between hover:border-red-600/50 transition';
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'text-xs font-bold text-white';
+                titleSpan.textContent = ep.title || `الحلقة ${epIdx + 1}`;
+                const btn = document.createElement('button');
+                btn.className = 'bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-white';
+                btn.innerHTML = '<i class="fa-solid fa-play text-[9px]"></i> تشغيل';
+                btn.addEventListener('click', () => {
+                    openPlayer(ep.url, `${currentSeriesData.title} - الموسم ${season.season} - ${ep.title}`);
+                });
+                row.appendChild(titleSpan);
+                row.appendChild(btn);
+                list.appendChild(row);
             });
-            document.getElementById('episodes-list').innerHTML = epsHtml;
         }
 
         function closeSeriesModal() {
             document.getElementById('series-modal').classList.add('hidden');
         }
 
+        // ---------- البث المباشر ----------
+
         async function loadLive() {
-            const res = await fetch('/api/live');
-            const data = await res.json();
-            let html = '';
-            data.channels.forEach(ch => {
-                html += `
-                    <div class="bg-[#1f1f1f] border border-slate-800 p-5 rounded-xl flex flex-col justify-between shadow-xl gap-4">
-                        <h4 class="font-bold text-base text-white">${ch.name}</h4>
-                        <button onclick="openPlayer('${ch.url}', '${ch.name.replace(/'/g, "\\'")}')" class="w-full bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer text-white">
-                            <i class="fa-solid fa-tower-broadcast"></i> بث مباشر
-                        </button>
-                    </div>`;
-            });
-            document.getElementById('live-grid').innerHTML = html;
+            const grid = document.getElementById('live-grid');
+            grid.innerHTML = `<div class="col-span-full flex justify-center py-10"><i class="fa-solid fa-spinner fa-spin text-red-600 text-2xl"></i></div>`;
+            try {
+                const res = await fetch('/api/live');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const channels = data.channels || [];
+
+                if (channels.length === 0) {
+                    renderErrorState('live-grid', 'لا توجد قنوات بث متاحة حالياً.', loadLive);
+                    return;
+                }
+
+                let html = '';
+                channels.forEach(ch => {
+                    html += `
+                        <div class="bg-[#1f1f1f] border border-slate-800 p-5 rounded-xl flex flex-col justify-between shadow-xl gap-4">
+                            <h4 class="font-bold text-base text-white">${escapeHtml(ch.name)}</h4>
+                            <button data-url="${escapeHtml(ch.url)}" data-name="${escapeHtml(ch.name)}" class="live-play-btn w-full bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer text-white">
+                                <i class="fa-solid fa-tower-broadcast"></i> بث مباشر
+                            </button>
+                        </div>`;
+                });
+                grid.innerHTML = html;
+                grid.querySelectorAll('.live-play-btn').forEach(btn => {
+                    btn.addEventListener('click', () => openPlayer(btn.dataset.url, btn.dataset.name));
+                });
+            } catch (err) {
+                console.error('Error loading live channels:', err);
+                renderErrorState('live-grid', 'تعذّر تحميل القنوات. تحقق من الاتصال أو حاول لاحقاً.', loadLive);
+                showToast('فشل تحميل قنوات البث المباشر');
+            }
         }
 
-        function renderPagination(containerId, currentPage, totalPages, callback) {
-            document.getElementById(containerId).innerHTML = `
-                <button onclick="${callback.name}(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition cursor-pointer">السابق</button>
-                <span class="text-xs text-slate-400 font-bold">صفحة ${currentPage} من ${totalPages}</span>
-                <button onclick="${callback.name}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition cursor-pointer">التالي</button>
-            `;
+        // ---------- الترقيم بين الصفحات ----------
+
+        function renderPagination(containerId, currentPage, totalPages, callbackFn) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            if (!totalPages || totalPages <= 1) return;
+
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = 'السابق';
+            prevBtn.className = `px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition text-white ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`;
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.addEventListener('click', () => callbackFn(currentPage - 1));
+
+            const label = document.createElement('span');
+            label.className = 'text-xs text-slate-400 font-bold';
+            label.textContent = `صفحة ${currentPage} من ${totalPages}`;
+
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'التالي';
+            nextBtn.className = `px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition text-white ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`;
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.addEventListener('click', () => callbackFn(currentPage + 1));
+
+            container.appendChild(prevBtn);
+            container.appendChild(label);
+            container.appendChild(nextBtn);
         }
+
+        // ---------- المشغل (يدعم HLS عبر hls.js + fallback) ----------
 
         function openPlayer(url, title) {
-            document.getElementById('modal-title').innerText = title;
+            if (!url) {
+                showToast('رابط التشغيل غير متوفر');
+                return;
+            }
+            document.getElementById('modal-title').textContent = title || '';
             const player = document.getElementById('active-video-player');
-            player.src = url;
-            player.load(); // فرض تحميل الفيديو لتجنب الشاشة الرمادية
+            const loadingEl = document.getElementById('player-loading');
             document.getElementById('video-modal').classList.remove('hidden');
-            player.play().catch(e => console.log("Autoplay waiting for user interaction:", e));
+            loadingEl.classList.remove('hidden');
+
+            // تنظيف أي مثيل hls.js سابق لتفادي تسرب الذاكرة
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
+            player.pause();
+            player.removeAttribute('src');
+            player.load();
+
+            const isM3u8 = url.toLowerCase().includes('.m3u8');
+
+            if (isM3u8 && window.Hls && Hls.isSupported()) {
+                // متصفحات لا تدعم HLS أصلاً (Chrome/Firefox/Edge) => استخدام hls.js
+                hlsInstance = new Hls();
+                hlsInstance.loadSource(url);
+                hlsInstance.attachMedia(player);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                    loadingEl.classList.add('hidden');
+                    player.play().catch(e => console.log('Autoplay waiting for user interaction:', e));
+                });
+                hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        console.error('HLS fatal error:', data);
+                        loadingEl.classList.add('hidden');
+                        showToast('تعذّر تشغيل البث. جرّب مرة أخرى.');
+                        closePlayer();
+                    }
+                });
+            } else {
+                // Safari يدعم HLS أصلياً، وأيضاً fallback لملفات mp4 العادية
+                player.src = url;
+                player.load();
+                player.oncanplay = () => loadingEl.classList.add('hidden');
+                player.onerror = () => {
+                    loadingEl.classList.add('hidden');
+                    showToast('تعذّر تشغيل هذا الملف.');
+                    closePlayer();
+                };
+                player.play().catch(e => console.log('Autoplay waiting for user interaction:', e));
+            }
         }
 
         function closePlayer() {
             const player = document.getElementById('active-video-player');
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
             player.pause();
-            player.src = '';
+            player.removeAttribute('src');
+            player.load();
             document.getElementById('video-modal').classList.add('hidden');
         }
 
+        // بدء التشغيل تلقائياً على قسم الأفلام
         switchTab('movies');
     </script>
 </body>
