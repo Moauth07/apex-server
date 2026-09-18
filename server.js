@@ -1,4 +1,38 @@
-// مسار الأفلام والمسلسلات (VOD) محسّن برابط فيديو مدعوم ومباشر
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+const path = require('path');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+// عرض واجهة المستخدم (index.html) مباشرة عند الدخول للرابط الرئيسي
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// مسار قنوات البث الحي والمباريات
+app.get('/api/live', async (req, res) => {
+  try {
+    const channels = [
+      { id: 1, name: 'BeIN Sports 1 (Live Stream)', group: 'Sports', url: 'https://test-streams.mux.dev/x364fish/pl/index.m3u8' },
+      { id: 2, name: 'SSC Sports HD', group: 'Sports', url: 'https://test-streams.mux.dev/x364fish/pl/index.m3u8' },
+      { id: 3, name: 'Al Arabiya News', group: 'News', url: 'https://live-hls-web-aje.getaj.net/AJE/03.m3u8' }
+    ];
+    
+    res.json({
+      status: 'success',
+      count: channels.length,
+      channels: channels
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch live channels' });
+  }
+});
+
+// مسار الأفلام والمسلسلات (VOD) برابط فيديو مباشر ومدعوم
 app.get('/api/vod', (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -13,7 +47,7 @@ app.get('/api/vod', (req, res) => {
         category: i % 2 === 0 ? 'Action & Sci-Fi' : 'Drama & Thriller',
         year: 2024 + (i % 3),
         poster: 'https://via.placeholder.com/300x450.png?text=Apex+Movie',
-        stream_url: 'https://www.w3schools.com/html/mov_bbb.mp4' // رابط فيديو مباشر وثابت ومدعوم
+        stream_url: 'https://www.w3schools.com/html/mov_bbb.mp4'
       });
     }
 
@@ -30,4 +64,8 @@ app.get('/api/vod', (req, res) => {
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Failed to load VOD catalog' });
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`Apex+ Server is running on port ${PORT}`);
 });
