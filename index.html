@@ -3,190 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apex+ IPTV & VOD Dashboard</title>
-    <!-- Tailwind CSS لتصميم عصري وسريع -->
+    <title>منصة Apex+ الرقمية</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome للأيقونات -->
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+        body { font-family: 'Tajawal', sans-serif; background-color: #0b0f19; color: #f3f4f6; }
         .card-hover:hover { transform: translateY(-4px); transition: all 0.3s ease; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <!-- الشريط العلوي -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-md">
-        <div class="flex items-center space-x-3 space-x-reverse">
-            <div class="bg-red-600 text-white font-black px-3 py-1 rounded-lg text-xl tracking-wider">+APEX</div>
-            <span class="text-slate-400 text-sm hidden sm:inline">منصة البث الذكية</span>
-        </div>
-        <div class="flex items-center space-x-4 space-x-reverse">
-            <button onclick="switchTab('live')" id="btn-live" class="px-4 py-2 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">البث الحي</button>
-            <button onclick="switchTab('vod')" id="btn-vod" class="px-4 py-2 rounded-lg font-medium bg-red-600 text-white transition">الأفلام والمسلسلات</button>
+    <!-- شريط التنقل العلوي -->
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <h1 class="text-2xl font-black text-red-600 tracking-wider">APEX+</h1>
+                <nav class="hidden md:flex items-center gap-2">
+                    <button onclick="switchTab('movies')" id="nav-movies" class="px-4 py-2 rounded-lg text-sm font-bold bg-red-600 text-white transition">الأفلام (10K)</button>
+                    <button onclick="switchTab('series')" id="nav-series" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition">المسلسلات (10K)</button>
+                    <button onclick="switchTab('live')" id="nav-live" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition">البث الحي</button>
+                </nav>
+            </div>
+            <div class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1.5 rounded-full font-bold">
+                <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> متصل بالسحابة
+            </div>
         </div>
     </header>
 
     <!-- المحتوى الرئيسي -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-6">
+    <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6">
         
-        <!-- قسم البث الحي -->
-        <section id="section-live" class="space-y-6 hidden">
-            <h2 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-satellite-dish text-red-500"></i> قنوات البث الحي والمباريات</h2>
-            <div id="live-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- يتم تعبئته تلقائياً عبر JavaScript -->
+        <!-- قسم الأفلام -->
+        <section id="section-movies" class="space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2 text-slate-100">
+                    <i class="fa-solid fa-film text-red-500"></i> مكتبة الأفلام السينمائية
+                </h2>
+                <span id="movies-count" class="text-xs text-slate-400 font-semibold">جاري التحميل...</span>
             </div>
+            <div id="movies-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            <!-- ترقيّم الصفحات -->
+            <div id="movies-pagination" class="flex justify-center items-center gap-3 pt-6"></div>
         </section>
 
-        <!-- قسم الأفلام (VOD) -->
-        <section id="section-vod" class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <h2 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-film text-red-500"></i> مكتبة الأفلام والمسلسلات</h2>
-                <div class="flex items-center gap-2">
-                    <button onclick="changePage(currentPage - 1)" id="prev-btn" class="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 disabled:opacity-50">السابق</button>
-                    <span id="page-info" class="text-sm text-slate-400">الصفحة 1</span>
-                    <button onclick="changePage(currentPage + 1)" id="next-btn" class="px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700">التالي</button>
-                </div>
+        <!-- قسم المسلسلات -->
+        <section id="section-series" class="space-y-6 hidden">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2 text-slate-100">
+                    <i class="fa-solid fa-tv text-red-500"></i> مكتبة المسلسلات التلفزيونية
+                </h2>
+                <span id="series-count" class="text-xs text-slate-400 font-semibold">جاري التحميل...</span>
             </div>
-            <div id="vod-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                <!-- يتم تعبئته تلقائياً عبر JavaScript -->
+            <div id="series-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            <!-- ترقيّم الصفحات -->
+            <div id="series-pagination" class="flex justify-center items-center gap-3 pt-6"></div>
+        </section>
+
+        <!-- قسم البث الحي -->
+        <section id="section-live" class="space-y-6 hidden">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2 text-slate-100">
+                    <i class="fa-solid fa-satellite-dish text-red-500"></i> قنوات البث الحي والمباريات
+                </h2>
             </div>
+            <div id="live-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
         </section>
 
     </main>
 
-    <!-- نافذة تشغيل المشغل (Modal) -->
-    <div id="player-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden border border-slate-800 relative shadow-2xl">
+    <!-- مشغل الفيديو المنبثق -->
+    <div id="video-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
             <div class="flex justify-between items-center p-4 border-b border-slate-800">
-                <h3 id="modal-title" class="font-bold text-lg">مشغل العرض</h3>
-                <button onclick="closePlayer()" class="text-slate-400 hover:text-white text-xl px-2">&times;</button>
+                <h3 id="modal-title" class="font-bold text-lg text-white">مشغل الوسائط</h3>
+                <button onclick="closePlayer()" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <div class="p-4 bg-black aspect-video flex items-center justify-center">
-                <video id="video-player" controls class="w-full h-full max-h-[70vh]" src=""></video>
+            <div class="aspect-video bg-black relative flex items-center justify-center">
+                <video id="active-video-player" controls autoplay class="w-full h-full object-contain"></video>
             </div>
         </div>
     </div>
 
-    <footer class="bg-slate-900 border-t border-slate-800 text-center py-4 text-sm text-slate-500 mt-auto">
-        Apex+ IPTV Proxy Dashboard &copy; 2026
-    </footer>
-
-    <!-- سكربت الجافاسكريبت للتحكم والربط -->
+    <!-- الجافاسكريبت للتحكم والواجهة -->
     <script>
-        const API_BASE = ''; // الاتصال بنفس السيرفر المحلي
-        let currentPage = 1;
+        let currentTab = 'movies';
 
         function switchTab(tab) {
-            const liveSec = document.getElementById('section-live');
-            const vodSec = document.getElementById('section-vod');
-            const btnLive = document.getElementById('btn-live');
-            const btnVod = document.getElementById('btn-vod');
+            currentTab = tab;
+            document.getElementById('section-movies').classList.add('hidden');
+            document.getElementById('section-series').classList.add('hidden');
+            document.getElementById('section-live').classList.add('hidden');
 
-            if (tab === 'live') {
-                liveSec.classList.remove('hidden');
-                vodSec.classList.add('hidden');
-                btnLive.className = "px-4 py-2 rounded-lg font-medium bg-red-600 text-white transition";
-                btnVod.className = "px-4 py-2 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
-                fetchLiveChannels();
-            } else {
-                liveSec.classList.add('hidden');
-                vodSec.classList.remove('hidden');
-                btnVod.className = "px-4 py-2 rounded-lg font-medium bg-red-600 text-white transition";
-                btnLive.className = "px-4 py-2 rounded-lg font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
-                fetchVodMovies(currentPage);
-            }
+            document.getElementById('nav-movies').className = 'px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition';
+            document.getElementById('nav-series').className = 'px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition';
+            document.getElementById('nav-live').className = 'px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition';
+
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+            document.getElementById(`nav-${tab}`).className = 'px-4 py-2 rounded-lg text-sm font-bold bg-red-600 text-white transition';
+
+            if (tab === 'movies') loadMovies(1);
+            if (tab === 'series') loadSeries(1);
+            if (tab === 'live') loadLive();
         }
 
-        async function fetchLiveChannels() {
+        async function loadMovies(page) {
             try {
-                const res = await fetch(`${API_BASE}/api/live`);
+                const res = await fetch(`/api/movies?page=${page}`);
                 const data = await res.json();
-                const container = document.getElementById('live-container');
-                container.innerHTML = '';
-
-                if (data.status === 'success' && data.channels) {
-                    data.channels.forEach(channel => {
-                        container.innerHTML += `
-                            <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-5 flex flex-col justify-between card-hover">
+                document.getElementById('movies-count').innerText = `إجمالي الأفلام: ${data.total_items.toLocaleString()} فيلم`;
+                
+                let html = '';
+                data.movies.forEach(m => {
+                    html += `
+                        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl overflow-hidden flex flex-col card-hover shadow-lg">
+                            <div class="bg-slate-900 aspect-[2/3] relative overflow-hidden">
+                                <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover">
+                                <span class="absolute top-2 right-2 bg-black/80 text-[10px] px-2 py-0.5 rounded font-bold">${m.year}</span>
+                            </div>
+                            <div class="p-3 flex flex-col flex-1 justify-between bg-slate-900/80">
                                 <div>
-                                    <span class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-md font-semibold">${channel.group}</span>
-                                    <h3 class="text-lg font-bold mt-3">${channel.name}</h3>
+                                    <span class="text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-semibold">${m.category}</span>
+                                    <h4 class="font-bold text-xs mt-1.5 truncate text-slate-200" title="${m.title}">${m.title}</h4>
                                 </div>
-                                <button onclick="openPlayer('${channel.url}', '${channel.name}')" class="mt-5 w-full bg-red-600 hover:bg-red-700 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition cursor-pointer">
-                                    <i class="fa-solid fa-play"></i> تشغيل البث
+                                <button onclick="openPlayer('${m.stream_url}', '${m.title}')" class="mt-3 w-full bg-red-600 hover:bg-red-700 py-2 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md">
+                                    <i class="fa-solid fa-play"></i> مشاهدة
                                 </button>
                             </div>
-                        `;
-                    });
-                }
-            } catch (err) {
-                console.error("خطأ في جلب القنوات:", err);
+                        </div>
+                    `;
+                });
+                document.getElementById('movies-grid').innerHTML = html;
+
+                // أزرار التنقل بين الصفحات
+                renderPagination('movies-pagination', data.current_page, data.total_pages, loadMovies);
+            } catch (e) {
+                console.error(e);
             }
         }
 
-        async function fetchVodMovies(page) {
+        async function loadSeries(page) {
             try {
-                const res = await fetch(`${API_BASE}/api/vod?page=${page}`);
+                const res = await fetch(`/api/series?page=${page}`);
                 const data = await res.json();
-                const container = document.getElementById('vod-container');
-                container.innerHTML = '';
-
-                if (data.status === 'success' && data.movies) {
-                    document.getElementById('page-info').innerText = `الصفحة ${data.current_page} من ${data.total_pages}`;
-                    document.getElementById('prev-btn').disabled = data.current_page <= 1;
-                    document.getElementById('next-btn').disabled = data.current_page >= data.total_pages;
-
-                    data.movies.forEach(movie => {
-                        container.innerHTML += `
-                            <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl overflow-hidden flex flex-col card-hover">
-                                <div class="bg-slate-700 aspect-[2/3] relative flex items-center justify-center">
-                                    <i class="fa-solid fa-film text-4xl text-slate-500"></i>
-                                    <span class="absolute top-2 right-2 bg-black/70 text-xs px-2 py-1 rounded">${movie.year}</span>
-                                </div>
-                                <div class="p-3 flex flex-col flex-1 justify-between">
-                                    <div>
-                                        <span class="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">${movie.category}</span>
-                                        <h4 class="font-bold text-sm mt-1 truncate">${movie.title}</h4>
-                                    </div>
-                                    <button onclick="openPlayer('${movie.stream_url}', '${movie.title}')" class="mt-3 w-full bg-slate-700 hover:bg-red-600 py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer">
-                                        <i class="fa-solid fa-play"></i> مشاهدة
-                                    </button>
-                                </div>
+                document.getElementById('series-count').innerText = `إجمالي المسلسلات: ${data.total_items.toLocaleString()} مسلسل`;
+                
+                let html = '';
+                data.series.forEach(s => {
+                    html += `
+                        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl overflow-hidden flex flex-col card-hover shadow-lg">
+                            <div class="bg-slate-900 aspect-[2/3] relative overflow-hidden">
+                                <img src="${s.poster}" alt="${s.title}" class="w-full h-full object-cover">
+                                <span class="absolute top-2 right-2 bg-black/80 text-[10px] px-2 py-0.5 rounded font-bold">${s.year}</span>
                             </div>
-                        `;
-                    });
-                }
-            } catch (err) {
-                console.error("خطأ في جلب الأفلام:", err);
+                            <div class="p-3 flex flex-col flex-1 justify-between bg-slate-900/80">
+                                <div>
+                                    <span class="text-[9px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-semibold">${s.category}</span>
+                                    <h4 class="font-bold text-xs mt-1.5 truncate text-slate-200" title="${s.title}">${s.title}</h4>
+                                </div>
+                                <button onclick="openPlayer('${s.stream_url}', '${s.title}')" class="mt-3 w-full bg-blue-600 hover:bg-blue-700 py-2 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md">
+                                    <i class="fa-solid fa-play"></i> مشاهدة
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('series-grid').innerHTML = html;
+
+                renderPagination('series-pagination', data.current_page, data.total_pages, loadSeries);
+            } catch (e) {
+                console.error(e);
             }
         }
 
-        function changePage(page) {
-            if (page < 1) return;
-            currentPage = page;
-            fetchVodMovies(currentPage);
+        async function loadLive() {
+            try {
+                const res = await fetch('/api/live');
+                const data = await res.json();
+                let html = '';
+                data.channels.forEach(ch => {
+                    html += `
+                        <div class="bg-slate-800/50 border border-slate-700/60 p-4 rounded-xl flex flex-col justify-between shadow-lg">
+                            <div>
+                                <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-semibold">${ch.group}</span>
+                                <h3 class="font-bold text-base mt-2 text-white">${ch.name}</h3>
+                            </div>
+                            <button onclick="openPlayer('${ch.url}', '${ch.name}')" class="mt-4 w-full bg-red-600 hover:bg-red-700 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition shadow">
+                                <i class="fa-solid fa-tower-broadcast"></i> تشغيل البث
+                            </button>
+                        </div>
+                    `;
+                });
+                document.getElementById('live-grid').innerHTML = html;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderPagination(containerId, currentPage, totalPages, callback) {
+            const container = document.getElementById(containerId);
+            let html = `
+                <button onclick="${callback.name}(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-3 py-1.5 bg-slate-800 rounded text-xs font-bold hover:bg-slate-700">السابق</button>
+                <span class="text-xs text-slate-400">صفحة ${currentPage} من ${totalPages}</span>
+                <button onclick="${callback.name}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : ''} class="px-3 py-1.5 bg-slate-800 rounded text-xs font-bold hover:bg-slate-700">التالي</button>
+            `;
+            container.innerHTML = html;
         }
 
         function openPlayer(url, title) {
-            const modal = document.getElementById('player-modal');
-            const video = document.getElementById('video-player');
             document.getElementById('modal-title').innerText = title;
-            modal.classList.remove('hidden');
-            video.src = url;
-            video.play();
+            const player = document.getElementById('active-video-player');
+            player.src = url;
+            document.getElementById('video-modal').classList.remove('hidden');
+            player.play().catch(e => console.log("Autoplay blocked:", e));
         }
 
         function closePlayer() {
-            const modal = document.getElementById('player-modal');
-            const video = document.getElementById('video-player');
-            modal.classList.add('hidden');
-            video.pause();
-            video.src = '';
+            const player = document.getElementById('active-video-player');
+            player.pause();
+            player.src = '';
+            document.getElementById('video-modal').classList.add('hidden');
         }
 
-        // تحميل الأفلام تلقائياً عند فتح الصفحة
-        fetchVodMovies(currentPage);
+        // تحميل الأفلام افتراضياً عند فتح الموقع
+        loadMovies(1);
     </script>
 </body>
 </html>
