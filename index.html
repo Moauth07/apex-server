@@ -424,9 +424,12 @@
                 });
                 hlsInstance.on(Hls.Events.ERROR, (event, data) => {
                     if (data.fatal) {
-                        console.error('HLS fatal error:', data);
+                        console.error('HLS fatal error:', { url, type: data.type, details: data.details, response: data.response });
                         loadingEl.classList.add('hidden');
-                        showToast('تعذّر تشغيل البث. جرّب مرة أخرى.');
+                        let detail = data.details || 'خطأ غير معروف';
+                        if (data.type === 'networkError') detail = 'خطأ شبكة — تحقق من الرابط أو CORS';
+                        else if (data.type === 'mediaError') detail = 'تعذّر فك ترميز البث';
+                        showToast(`تعذّر تشغيل البث: ${detail}`);
                         closePlayer();
                     }
                 });
@@ -437,7 +440,16 @@
                 player.oncanplay = () => loadingEl.classList.add('hidden');
                 player.onerror = () => {
                     loadingEl.classList.add('hidden');
-                    showToast('تعذّر تشغيل هذا الملف.');
+                    const codeMap = {
+                        1: 'تم إلغاء التحميل (ABORTED)',
+                        2: 'خطأ شبكة أثناء جلب الملف — تحقق من الرابط أو CORS (NETWORK)',
+                        3: 'تعذّر فك ترميز الملف — الصيغة غير مدعومة (DECODE)',
+                        4: 'الرابط غير صالح أو الصيغة غير مدعومة في المتصفح (SRC_NOT_SUPPORTED)'
+                    };
+                    const err = player.error;
+                    const detail = err ? (codeMap[err.code] || `خطأ غير معروف (code ${err.code})`) : 'خطأ غير معروف';
+                    console.error('Video playback error:', { url, code: err?.code, detail });
+                    showToast(`تعذّر تشغيل هذا الملف: ${detail}`);
                     closePlayer();
                 };
                 player.play().catch(e => console.log('Autoplay waiting for user interaction:', e));
